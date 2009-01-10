@@ -22,7 +22,7 @@ FS: foreach my $fs (@filesystems) {
 	
 	unless ( grep { /\@${SNAPSHOT_PREFIX}-full/ } @snapshots ) {
 		warn "no full backup!";
-		print "Would make full backup snapshot and delete any incrementals here!\n";
+		snapshot_and_send($fs, "${SNAPSHOT_PREFIX}-full");
 		next FS;
 	}
 	
@@ -37,10 +37,7 @@ FS: foreach my $fs (@filesystems) {
 	}
 	
 	my $new_snapshot = "${SNAPSHOT_PREFIX}-incr-${new_incr}";
-	snapshot_and_send($fs, $new_snapshot, $prev_incr || 'full');
-	
-	
-	
+	snapshot_and_send($fs, $new_snapshot, $prev_incr || 'full');	
 }
 
 sub snapshot_and_send {
@@ -60,6 +57,18 @@ sub snapshot_and_send {
 	
 	my $backup_file = "$fs\@$snapshot";
 	$backup_file =~ s|/|_|g;
+	$backup_file .= ".zfs.gpg";
+	
+	if (-e "$backup_path/$backup_file") {
+		warn "snapshot $backup_path/$backup_file already exists, skipping..";
+		return 0;
+	}
 	syscmd ("$zfs_send | $GPG_CMD > $backup_path/$backup_file");
 	
+}
+
+sub syscmd {
+	my $cmd = shift;
+	#system($cmd)==0 || die $!;
+	print "would execute: $cmd";
 }
