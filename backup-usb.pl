@@ -6,15 +6,26 @@ my $GPG_CMD 		= "/opt/csw/bin/gpg";
 my $SNAPSHOT_PREFIX	= "backup-usb";
 my $backup_path		= "/backup-usb-1/filerbak";
 
-my @EXCLUDE = qw| tank/swap tank/iscsi tank/tmp |;
+my @EXCLUDE = qw|
+tank/iscsi
+tank/swap
+tank/tmp
+|;
 
 my @filesystems = `zfs list -o name -H -r tank`;
+chomp @filesystems;
+print join (', ', @filesystems); print "\n";
 
-foreach (@EXCLUDE) {
-	@filesystems = grep { ! /$_/ } @filesystems;
+foreach my $exc (@EXCLUDE) {
+#	print "_: $_\n";
+#	print grep { ! m|^$_| } @filesystems;
+	@filesystems = grep { ! m|^$exc| } @filesystems;	
 }
+print "\n";
+print @filesystems;
 
 FS: foreach my $fs (@filesystems) {
+	#print "fs: $fs";
 	my $prev_incr = "";
 	my $new_incr;
 	my @snapshots = `zfs list -r -t snapshot $fs`;
@@ -70,5 +81,5 @@ sub snapshot_and_send {
 sub syscmd {
 	my $cmd = shift;
 	#system($cmd)==0 || die $!;
-	print "would execute: $cmd";
+	print "would execute: $cmd\n\n";
 }
