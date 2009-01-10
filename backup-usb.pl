@@ -32,7 +32,7 @@ FS: foreach my $fs (@filesystems) {
 	@snapshots = sort grep { /^${fs}\@backup-usb/ } @snapshots;
 	
 	unless ( grep { /\@${SNAPSHOT_PREFIX}-full/ } @snapshots ) {
-		warn "no full backup!";
+		warn "no full backup of $fs, making one now..\n";
 		snapshot_and_send($fs, "${SNAPSHOT_PREFIX}-full");
 		next FS;
 	}
@@ -60,12 +60,16 @@ sub snapshot_and_send {
 	
 	my $zfs_send;
 	if ($prev_incr) {
-		$zfs_send = "zfs send -i $fs\@${SNAPSHOT_PREFIX}-incr-$prev_incr $fs\@$snapshot";		
+		$zfs_send = "zfs send -i $fs\@${SNAPSHOT_PREFIX}-incr-$prev_incr $fs\@$snapshot";
+		unless (check_all_incrs_present($fs, $prev_incr, $backup_path)) {
+			warn "Not all incrementals are present on $backup_path. Skipping backup!";
+			return 0;
+		}
 	}
 	else {
 		$zfs_send = "zfs send $fs\@snapshot";
 	}
-	
+
 	my $backup_file = "$fs\@$snapshot";
 	$backup_file =~ s|/|_|g;
 	$backup_file .= ".zfs.gpg";
@@ -78,8 +82,45 @@ sub snapshot_and_send {
 	
 }
 
+sub send_snap {
+	my $fs = shift;
+	my $incr = shift;
+	
+	
+}
+
 sub syscmd {
 	my $cmd = shift;
 	#system($cmd)==0 || die $!;
 	print "would execute: $cmd\n\n";
+}
+
+sub check_all_incrs_present {
+	my $fs = shift;
+	my $highest_expected = shift;
+	my $backup_path = shift;
+	
+	my $ret = 1;
+	
+	my $fs_s = "$fs\@${SNAPSHOT_PREFIX}";
+	
+	unless (-e "$backup_path/${fs_s}-full.zfs.gpg") {
+		warn "Full backup file for $fs does not exist on $backup_path";
+		$ret = 0;
+	}
+	
+	if ($highest_expected eq 'full') {
+		return $ret;
+	}
+	
+	foreach (0001 .. $highest_expected) {
+		my $incr = sprintf ("%05d", $_);
+		
+		unless (-e "$backup_path/${fs_s}-incr-${incr}.zfs.gpg") {
+			warn "Increment $incr does not exist for $fs on $backup_path";
+			$ret = 0;	
+		}
+	}
+	
+	return $ret;
 }
