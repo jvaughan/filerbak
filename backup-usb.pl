@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 use strict;
 
-my $MAIN_POOL =		"tank";
-my $GPG_CMD =		"/opt/csw/bin/gpg";
-my $SNAPSHOT_PREFIX =	"backup-usb";
-my $BACKUP_PATH	=	"/backup-usb-1/filerbak"
+my $MAIN_POOL 		= "tank";
+my $GPG_CMD 		= "/opt/csw/bin/gpg";
+my $SNAPSHOT_PREFIX	= "backup-usb";
+my $backup_path		= "/backup-usb-1/filerbak";
 
 my @EXCLUDE = qw| tank/swap tank/iscsi tank/tmp |;
 
@@ -52,14 +52,14 @@ sub snapshot_and_send {
 	
 	my $zfs_send;
 	if ($prev_incr) {
-		$zfs_send = "zfs send -i $fs\@${SNAPSHOT_PREFIX}-incr-$prev_incr $fs\@$snapshot";
-		
+		$zfs_send = "zfs send -i $fs\@${SNAPSHOT_PREFIX}-incr-$prev_incr $fs\@$snapshot";		
 	}
 	else {
 		$zfs_send = "zfs send $fs\@snapshot";
 	}
 	
-	my $backup_file = "$fs\@$snapshot" =~ s|/|_|g;
-	$cmd = "$zfs_send | $GPG_CMD > $backup_path/$backup_file";
+	my $backup_file = "$fs\@$snapshot";
+	$backup_file =~ s|/|_|g;
+	syscmd ("$zfs_send | $GPG_CMD > $backup_path/$backup_file");
 	
 }
