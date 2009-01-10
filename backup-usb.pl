@@ -14,14 +14,30 @@ foreach (@EXCLUDE) {
 }
 
 FS: foreach my $fs (@filesystems) {
+	my $prev_incr;
+	my $new_incr;
 	my @snapshots = `zfs list -r -t snapshot $fs`;
 	@snapshots = sort grep { /^${fs}\@backup-usb/ } @snapshots;
 	
-	unless grep { /backup-usb-full/ } @snapshots {
+	unless grep { /${SNAPSHOT_PREFIX}-full/ } @snapshots {
 		warn "no full backup!";
 		print "Would make full backup and delete any incrementals here!\n";
 	}
 	
+	if ( my @incrs = grep { /${SNAPSHOT_PREFIX}-incr/ } @snapshots ) {
+		$incrs[$#incrs] =~ /${SNAPSHOT_PREFIX}-incr-(\d{4});
+		$prev_incr = $1;
+		$new_incr = $prev_incr + 1;
+		$new_incr = sprintf ("%05d", $new_incr);
+	}
+	else {
+		$new_incr = "0001"
+	}
 	
+	
+}
+
+sub snapshot_and_send {
+	my $ss_name = shift;
 	
 }
