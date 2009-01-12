@@ -2,7 +2,7 @@
 use strict;
 
 my $MAIN_POOL 		= "tank";
-my $GPG_CMD 		= "/opt/csw/bin/gpg";
+my $GPG_CMD 		= "/opt/csw/bin/gpg -e --recipient EB1968E0";
 my $SNAPSHOT_PREFIX	= "backup-usb";
 my $backup_path		= "/backup-usb-1/filerbak";
 
@@ -11,6 +11,10 @@ tank/iscsi
 tank/swap
 tank/tmp
 |;
+
+unless (-d $backup_path) {
+	die "$backup_path does not exist! quitting..";
+}
 
 my @filesystems = `zfs list -o name -H -r tank`;
 chomp @filesystems;
@@ -67,7 +71,7 @@ sub snapshot_and_send {
 		}
 	}
 	else {
-		$zfs_send = "zfs send $fs\@snapshot";
+		$zfs_send = "zfs send $fs\@${snapshot}";
 	}
 
 	my $backup_file = "$fs\@$snapshot";
@@ -85,7 +89,7 @@ sub snapshot_and_send {
 sub send_snap {
 	my $fs = shift;
 	my $incr = shift;
-	
+	my $prev_incr = shift || 0;
 	
 }
 
