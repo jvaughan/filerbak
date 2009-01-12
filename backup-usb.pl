@@ -95,8 +95,8 @@ sub send_snap {
 
 sub syscmd {
 	my $cmd = shift;
-	#system($cmd)==0 || die $!;
-	print "would execute: $cmd\n\n";
+	print "running: $cmd\n\n";
+	system($cmd)==0 || die $!;
 }
 
 sub check_all_incrs_present {
