@@ -59,12 +59,14 @@ sub snapshot_and_send {
 	my $fs = shift;
 	my $snapshot = shift;
 	my $prev_incr = shift || 0;
+
 	
 	syscmd("zfs snapshot $fs\@$snapshot");
 	
 	my $zfs_send;
 	if ($prev_incr) {
-		$zfs_send = "zfs send -i $fs\@${SNAPSHOT_PREFIX}-incr-$prev_incr $fs\@$snapshot";
+		my $prev_fs_s = ($prev_incr eq 'full') ? "$fs\@${SNAPSHOT_PREFIX}-full" : "$fs\@${SNAPSHOT_PREFIX}-incr-$prev_incr";
+		$zfs_send = "zfs send -i $prev_fs_s $fs\@$snapshot";
 		unless (check_all_incrs_present($fs, $prev_incr, $backup_path)) {
 			warn "Not all incrementals are present on $backup_path. Skipping backup!";
 			return 0;
