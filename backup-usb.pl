@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 use strict;
 
+my $DEBUG = 1;
+
 my $MAIN_POOL 		= "tank";
 my $GPG_CMD 		= "/opt/csw/bin/gpg -e --recipient EB1968E0";
 my $SNAPSHOT_PREFIX	= "backup-usb";
@@ -18,15 +20,12 @@ unless (-d $backup_path) {
 
 my @filesystems = `zfs list -o name -H -r tank`;
 chomp @filesystems;
-print join (', ', @filesystems); print "\n";
 
 foreach my $exc (@EXCLUDE) {
 #	print "_: $_\n";
 #	print grep { ! m|^$_| } @filesystems;
 	@filesystems = grep { ! m|^$exc| } @filesystems;	
 }
-print "\n";
-print @filesystems;
 
 FS: foreach my $fs (@filesystems) {
 	#print "fs: $fs";
@@ -77,7 +76,7 @@ sub snapshot_and_send {
 	}
 
 	my $backup_file = "$fs\@$snapshot";
-	$backup_file =~ s|/|_|g;
+	$backup_file = slash_to_underscore($backup_file);
 	$backup_file .= ".zfs.gpg";
 	
 	if (-e "$backup_path/$backup_file") {
@@ -98,7 +97,9 @@ sub send_snap {
 sub syscmd {
 	my $cmd = shift;
 	print "running: $cmd\n\n";
-	system($cmd)==0 || die $!;
+	unless ($DEBUG) {
+		system($cmd)==0 || die $!;
+	}
 }
 
 sub check_all_incrs_present {
@@ -108,6 +109,7 @@ sub check_all_incrs_present {
 	
 	my $ret = 1;
 	
+	$fs = slash_to_underscore ($fs);
 	my $fs_s = "$fs\@${SNAPSHOT_PREFIX}";
 	
 	unless (-e "$backup_path/${fs_s}-full.zfs.gpg") {
@@ -129,4 +131,12 @@ sub check_all_incrs_present {
 	}
 	
 	return $ret;
+}
+
+
+sub slash_to_underscore {
+	my $txt = shift;
+	
+	$txt =~ s|/|_|g;
+	return $txt;
 }
